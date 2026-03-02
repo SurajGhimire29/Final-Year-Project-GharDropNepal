@@ -1,0 +1,77 @@
+const mongoose = require('mongoose');
+
+const productSchema = new mongoose.Schema({
+  name: {
+    type: String,
+    required: [true, "Please enter product name"],
+    trim: true,
+    maxLength: [100, "Product name cannot exceed 100 characters"]
+  },
+  description: {
+    type: String,
+    required: [true, "Please enter product description"]
+  },
+  price: {
+    type: Number,
+    required: [true, "Please enter product price"],
+    default: 0.0
+  },
+  discountPrice: {
+    type: Number,
+    default: 0.0
+  },
+  unit: {
+    type: String,
+    required: [true, "Please specify unit (e.g., kg, gram, piece)"],
+    enum: {
+        values: ['kg', 'gram', 'piece', 'pkt', 'litre'],
+        message: "Please select correct unit"
+    }
+  },
+  images: [
+    {
+      public_id: { type: String, required: true },
+      url: { type: String, required: true }
+    }
+  ],
+  category: {
+    type: String,
+    required: [true, "Please select category for this product"],
+    enum: {
+      values: ['Vegetables', 'Fruits', 'Dairy', 'Organic', 'Meat', 'Bakery', 'Staples'],
+      message: "Please select correct category"
+    }
+  },
+  stock: {
+    type: Number,
+    required: [true, "Please enter product stock"],
+    default: 0
+  },
+  tag: {
+    type: String,
+    default: "Fresh"
+  },
+  isFestivalOffer: {
+    type: Boolean,
+    default: false
+  },
+  ratings: {
+    type: Number,
+    default: 0
+  },
+  numOfReviews: {
+    type: Number,
+    default: 0
+  },
+  user: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
+module.exports = mongoose.model("Product", productSchema);
