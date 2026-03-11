@@ -1,16 +1,43 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { ShoppingBasket, ArrowRight, Star } from 'lucide-react';
 
-const HomePage = () => {
+const Home = () => {
+  // This data should ideally match the IDs and structure in your SingleProductPage
   const products = [
-    { id: 1, name: "Organic Green Apples", price: "Rs. 250", image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&q=80&w=400", tag: "Fresh" },
-    { id: 2, name: "Local Mustang Potatoes", price: "Rs. 120", image: "https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?auto=format&fit=crop&q=80&w=400", tag: "Local" },
-    { id: 3, name: "Fresh Cauliflower", price: "Rs. 80", image: "https://images.unsplash.com/photo-1568584711075-3d021a7c3ec3?auto=format&fit=crop&q=80&w=400", tag: "Daily" },
-    { id: 4, name: "Himalayan Honey", price: "Rs. 850", image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=400", tag: "Organic" },
+    { 
+      id: 1, 
+      name: "Organic Green Apples", 
+      price: "Rs. 250", 
+      image: "https://images.unsplash.com/photo-1567306226416-28f0efdc88ce?auto=format&fit=crop&q=80&w=400", 
+      tag: "Fresh" 
+    },
+    { 
+      id: 2, 
+      name: "Local Mustang Potatoes", 
+      price: "Rs. 120", 
+      image: "https://images.unsplash.com/photo-1518977676601-b53f02ac6d31?auto=format&fit=crop&q=80&w=400", 
+      tag: "Local" 
+    },
+    { 
+      id: 3, 
+      name: "Fresh Cauliflower", 
+      price: "Rs. 80", 
+      image: "https://images.unsplash.com/photo-1568584711075-3d021a7c3ec3?auto=format&fit=crop&q=80&w=400", 
+      tag: "Daily" 
+    },
+    { 
+      id: 4, 
+      name: "Himalayan Honey", 
+      price: "Rs. 850", 
+      image: "https://images.unsplash.com/photo-1587049352846-4a222e784d38?auto=format&fit=crop&q=80&w=400", 
+      tag: "Organic" 
+    },
   ];
 
   return (
-    <div className="bg-[#f0f9f4]">
+    <div className="bg-[#f0f9f4] min-h-screen">
+      {/* Hero Section */}
       <section className="relative overflow-hidden bg-[#1b4332] text-white py-16 px-10 rounded-b-[3rem] shadow-xl">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between">
           <div className="md:w-1/2 space-y-6">
@@ -40,6 +67,7 @@ const HomePage = () => {
         </div>
       </section>
 
+      {/* Product Grid Section */}
       <section className="max-w-7xl mx-auto py-20 px-10">
         <div className="flex items-end justify-between mb-12">
           <div>
@@ -54,16 +82,20 @@ const HomePage = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
           {products.map((product) => (
             <div key={product.id} className="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 border border-[#d8f3dc]">
-              <div className="relative h-64 overflow-hidden">
-                <img 
-                  src={product.image} 
-                  alt={product.name} 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
-                />
-                <span className="absolute top-4 left-4 bg-[#1b4332] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">
-                  {product.tag}
-                </span>
-              </div>
+              
+              {/* Clickable Image Area */}
+              <Link to={`/product/${product.id}`}>
+                <div className="relative h-64 overflow-hidden cursor-pointer">
+                  <img 
+                    src={product.image} 
+                    alt={product.name} 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                  />
+                  <span className="absolute top-4 left-4 bg-[#1b4332] text-white text-[10px] font-black uppercase px-3 py-1 rounded-full">
+                    {product.tag}
+                  </span>
+                </div>
+              </Link>
               
               <div className="p-6">
                 <div className="flex gap-1 mb-2">
@@ -71,7 +103,14 @@ const HomePage = () => {
                     <Star key={i} size={12} className="fill-[#ffb703] text-[#ffb703]" />
                   ))}
                 </div>
-                <h3 className="text-[#1b4332] font-bold text-lg mb-1">{product.name}</h3>
+
+                {/* Clickable Title */}
+                <Link to={`/product/${product.id}`}>
+                  <h3 className="text-[#1b4332] font-bold text-lg mb-1 hover:text-[#40916c] transition-colors cursor-pointer">
+                    {product.name}
+                  </h3>
+                </Link>
+
                 <div className="flex items-center justify-between mt-4">
                   <p className="text-xl font-black text-[#1b4332]">{product.price}</p>
                   <button className="bg-[#f0f9f4] text-[#1b4332] p-2 rounded-xl hover:bg-[#1b4332] hover:text-white transition-colors">
@@ -87,4 +126,4 @@ const HomePage = () => {
   );
 };
 
-export default HomePage;
+export default Home;

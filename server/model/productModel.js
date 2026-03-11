@@ -22,7 +22,7 @@ const productSchema = new mongoose.Schema({
   },
   unit: {
     type: String,
-    required: [true, "Please specify unit (e.g., kg, gram, piece)"],
+    required: [false, "Please Provide Unit If Needed"],
     enum: {
         values: ['kg', 'gram', 'piece', 'pkt', 'litre'],
         message: "Please select correct unit"
