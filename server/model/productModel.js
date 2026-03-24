@@ -16,10 +16,13 @@ const productSchema = new mongoose.Schema({
     required: [true, "Please enter product price"],
     default: 0.0
   },
-  discountPrice: {
+discountPercentage: {
     type: Number,
-    default: 0.0
-  },
+    default: 0
+},
+discountPrice: {
+    type: Number
+},
   unit: {
     type: String,
     required: [false, "Please Provide Unit If Needed"],

@@ -18,11 +18,12 @@ exports.isAuthenticatedUser = async (req, res, next) => {
     }
 };
 
+// middleware/auth.js
 exports.authorizeRoles = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
+        if (!req.user || !roles.includes(req.user.role)) {
             return res.status(403).json({
-                message: `Role (${req.user.role}) is not allowed to access this resource`
+                message: `Role (${req.user ? req.user.role : 'unknown'}) is not allowed to access this resource`
             });
         }
         next();
