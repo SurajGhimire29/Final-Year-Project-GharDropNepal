@@ -21,9 +21,16 @@ exports.isAuthenticatedUser = async (req, res, next) => {
 // middleware/auth.js
 exports.authorizeRoles = (...roles) => {
     return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
+        // Convert the incoming role from DB to lowercase to ensure match
+        const userRole = req.user?.role?.toLowerCase();
+        
+        // Convert all allowed roles in the array to lowercase too
+        const allowedRoles = roles.map(role => role.toLowerCase());
+
+        if (!req.user || !allowedRoles.includes(userRole)) {
             return res.status(403).json({
-                message: `Role (${req.user ? req.user.role : 'unknown'}) is not allowed to access this resource`
+                success: false, // Adding success flag for frontend consistency
+                message: `Role (${req.user?.role || 'unknown'}) is not allowed to access this resource`
             });
         }
         next();

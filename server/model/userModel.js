@@ -83,8 +83,10 @@ const userSchema = new mongoose.Schema(
       lat: { type: Number },
       lng: { type: Number },
     },
-    
-
+    totalWithdrawn: {
+    type: Number,
+    default: 0
+  },
     // --- AUTH & VERIFICATION ---
     otp: { type: Number },
     otpExpires: { type: Date },

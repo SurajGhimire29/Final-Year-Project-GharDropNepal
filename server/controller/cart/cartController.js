@@ -83,34 +83,91 @@ exports.addToCart = async (req, res) => {
 // 2. GET USER CART
 exports.getCart = async (req, res) => {
     try {
-        const cart = await Cart.findOne({ user: req.user.id }).populate('items.product');
+        // Use ._id to ensure compatibility with most Auth middlewares
+        const userId = req.user._id || req.user.id;
+
+        // .populate is essential to get product details (name, price, etc.)
+        const cart = await Cart.findOne({ user: userId }).populate('items.product');
         
         if (!cart) {
-            return res.status(200).json({ success: true, cart: { items: [], totalPrice: 0 } });
+            return res.status(200).json({ 
+                success: true, 
+                cart: { items: [], totalPrice: 0 } 
+            });
         }
 
-        res.status(200).json({ success: true, cart });
+        // --- PRODUCT INTEGRITY CHECK ---
+        // If a product was deleted from the Products collection, 
+        // Mongoose populate returns 'null'. We filter those out.
+        const originalLength = cart.items.length;
+        cart.items = cart.items.filter(item => item.product !== null);
+
+        // If we found and removed "ghost" products, update the database
+        if (cart.items.length !== originalLength) {
+            calculateTotal(cart);
+            await cart.save();
+        }
+
+        res.status(200).json({ 
+            success: true, 
+            cart 
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error("GET_CART_ERROR:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to retrieve cart",
+            error: error.message 
+        });
     }
 };
-
 // 3. REMOVE ITEM
+// Change req.params.id to req.params.productId (or whatever matches your route)
 exports.removeItem = async (req, res) => {
     try {
-        const cart = await Cart.findOne({ user: req.user.id });
-        if (!cart) return res.status(404).json({ success: false, message: "Cart not found" });
+        const userId = req.user._id || req.user.id;
+        const cart = await Cart.findOne({ user: userId });
 
-        cart.items = cart.items.filter(item => item.product.toString() !== req.params.id);
+        if (!cart) {
+            return res.status(404).json({ 
+                success: false, 
+                message: "Cart not found" 
+            });
+        }
 
+        // We check both 'productId' and 'id' to match whatever you named 
+        // your parameter in cartRoutes.js
+        const pId = req.params.productId || req.params.id; 
+        
+        // Filter out the item that matches the ID
+        const initialCount = cart.items.length;
+        cart.items = cart.items.filter(item => item.product.toString() !== pId);
+
+        if (cart.items.length === initialCount) {
+            return res.status(404).json({
+                success: false,
+                message: "Item not found in cart"
+            });
+        }
+
+        // Recalculate the total price after removal
         calculateTotal(cart);
         await cart.save();
-        res.status(200).json({ success: true, cart });
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Item removed from basket",
+            cart 
+        });
     } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        console.error("REMOVE_ITEM_ERROR:", error);
+        res.status(500).json({ 
+            success: false, 
+            message: "Failed to remove item",
+            error: error.message 
+        });
     }
 };
-
 // 4. UPDATE QUANTITY
 exports.updateQuantity = async (req, res) => {
     try {

@@ -55,11 +55,11 @@ const Footer = () => {
             </li>
             <li className="flex items-center gap-3 text-[#1b4332] text-sm font-medium">
               <Phone size={18} className="text-[#40916c]" /> 
-              +977 98XXXXXXXX
+              +977 9814151831
             </li>
             <li className="flex items-center gap-3 text-[#1b4332] text-sm font-medium">
               <Mail size={18} className="text-[#40916c]" /> 
-              support@ghardrop.com
+              ghardropnepal@gmail.com
             </li>
           </ul>
         </div>

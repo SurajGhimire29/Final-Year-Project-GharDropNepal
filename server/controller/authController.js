@@ -20,38 +20,52 @@ const signUp = async (req, res) => {
         // 1. Check if user exists
         let user = await User.findOne({ email: cleanEmail });
         if (user && user.isVerified) {
-            return res.status(400).json({ message: "User already exists. Please Login." });
+            return res.status(400).json({ success: false, message: "User already exists. Please Login." });
         }
 
-        // 2. Handle Image Uploads (Assuming Multer is used)
-        let storeImage = {};
-        let deliveryLicenseImage = {};
+        // 2. Handle Image Uploads Safely
+        let storeImageData = null;
+        let deliveryLicenseImageData = null;
 
         if (req.files) {
-            if (req.files.storeImage) {
-                // Upload logic to Cloudinary here
-                // storeImage = { public_id: ..., url: ... };
+            // Check for Vendor Image safely using Optional Chaining
+            if (req.files?.storeImage?.[0]) {
+                const result = await cloudinary.uploader.upload(req.files.storeImage[0].path, {
+                    folder: "ghardrop/vendors",
+                });
+                storeImageData = { public_id: result.public_id, url: result.secure_url };
             }
-            if (req.files.deliveryLicenseImage) {
-                // Upload logic to Cloudinary here
-                // deliveryLicenseImage = { public_id: ..., url: ... };
+
+            // Check for Delivery License safely
+            if (req.files?.deliveryLicenseImage?.[0]) {
+                const result = await cloudinary.uploader.upload(req.files.deliveryLicenseImage[0].path, {
+                    folder: "ghardrop/delivery",
+                });
+                deliveryLicenseImageData = { public_id: result.public_id, url: result.secure_url };
             }
         }
 
+        // 3. Security & OTP
         const hashedPassword = await bcrypt.hash(password, 10);
         const otp = Math.floor(100000 + Math.random() * 900000).toString();
         const otpExpires = Date.now() + 10 * 60 * 1000;
 
+        // 4. Create the User Data Object
         const userData = { 
-            fullName, phoneNumber, password: hashedPassword,
-            role, otp, otpExpires, isVerified: false 
+            fullName, 
+            email: cleanEmail,
+            phoneNumber, 
+            password: hashedPassword,
+            role, 
+            otp, 
+            otpExpires, 
+            isVerified: false 
         };
 
-        // 3. Role-Specific Data Assignment
         if (role === 'vendor') {
             userData.storeName = storeName;
             userData.storeAddress = storeAddress;
-            userData.storeImage = storeImage; // Add the uploaded image
+            userData.storeImage = storeImageData; // Will be null if no image was uploaded
             userData.vendorStatus = 'pending';
         }
 
@@ -59,24 +73,33 @@ const signUp = async (req, res) => {
             userData.vehicleType = vehicleType;
             userData.vehicleNumber = vehicleNumber;
             userData.licenseNumber = licenseNumber;
-            userData.deliveryLicenseImage = deliveryLicenseImage; // Add the uploaded image
+            userData.deliveryLicenseImage = deliveryLicenseImageData;
             userData.deliveryStatus = 'pending';
         }
 
+        // 5. Database Save (Upsert ensures we update the OTP if they try again)
         await User.findOneAndUpdate(
             { email: cleanEmail },
             { $set: userData },
             { upsert: true, new: true }
         );
 
-        await sendOTPEmail(cleanEmail, otp);
+        // 6. Send OTP (Wrapped in a try-catch so it doesn't crash the whole process)
+        try {
+            await sendOTPEmail(cleanEmail, otp);
+        } catch (emailErr) {
+            console.error("Email Service Error:", emailErr);
+            // Optionally: return res.status(500).json({message: "Failed to send OTP"});
+        }
+
         res.status(200).json({ success: true, message: "OTP sent to your email." });
 
     } catch (error) {
+        // IMPORTANT: Look at your Node.js terminal/console to see this log!
+        console.error("SIGNUP CRASH ERROR:", error); 
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
 // @desc    Verify OTP and activate account
 // @route   POST /emailotpverification
 const verifyOTP = async (req, res) => {
@@ -255,11 +278,105 @@ const signOut = async (req, res) => {
     });
     return res.status(200).json({ success: true, message: "Logged out successfully" });
 };
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({ success: false, message: "Please provide an email." });
+        }
+
+        const cleanEmail = email.toLowerCase().trim();
+        const user = await User.findOne({ email: cleanEmail });
+
+        // Security Tip: Even if user doesn't exist, we usually send a 200 to prevent "Email Enumeration"
+        // But for development clarity, we'll return 404 here.
+        if (!user) {
+            return res.status(404).json({ success: false, message: "User not found with this email." });
+        }
+
+        // Generate a 6-digit OTP
+        const otp = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        // Set expiry for 10 minutes
+        const otpExpires = Date.now() + 10 * 60 * 1000;
+
+        // Save OTP to user record
+        user.otp = otp;
+        user.otpExpires = otpExpires;
+        await user.save();
+
+        // Send Email
+        try {
+            await sendOTPEmail(cleanEmail, otp);
+            res.status(200).json({ 
+                success: true, 
+                message: "A 6-digit reset code has been sent to your email." 
+            });
+        } catch (emailErr) {
+            console.error("Email Error:", emailErr);
+            res.status(500).json({ success: false, message: "Failed to send email. Try again later." });
+        }
+
+    } catch (error) {
+        console.error("Forgot Password Error:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
+// @desc    Reset Password using OTP
+// @route   POST /reset-password
+const resetPassword = async (req, res) => {
+    try {
+        const { email, otp, newPassword } = req.body;
+
+        if (!email || !otp || !newPassword) {
+            return res.status(400).json({ success: false, message: "All fields are required." });
+        }
+
+        const cleanEmail = email.toLowerCase().trim();
+        
+        // Find user with valid OTP and verify it hasn't expired
+        const user = await User.findOne({ 
+            email: cleanEmail,
+            otp: otp,
+            otpExpires: { $gt: Date.now() } // Must be greater than current time
+        });
+
+        if (!user) {
+            return res.status(400).json({ 
+                success: false, 
+                message: "Invalid OTP or the code has expired. Please request a new one." 
+            });
+        }
+
+        // Hash the new password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+        // Update password and clear OTP fields
+        user.password = hashedPassword;
+        user.otp = undefined;
+        user.otpExpires = undefined;
+        await user.save();
+
+        res.status(200).json({ 
+            success: true, 
+            message: "Password reset successful! You can now log in with your new password." 
+        });
+
+    } catch (error) {
+        console.error("Reset Password Error:", error);
+        res.status(500).json({ success: false, message: "Internal Server Error" });
+    }
+};
+
 
 module.exports = { 
     signUp, 
     verifyOTP, 
     updateProfessionalProfile, 
     signIn, 
-    signOut 
+    signOut,
+    forgotPassword,
+    resetPassword 
 };

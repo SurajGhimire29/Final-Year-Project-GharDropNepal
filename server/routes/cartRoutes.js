@@ -18,7 +18,7 @@ router.use(isAuthenticatedUser);
 
 // 2. Ensure the person logged in has the role of 'user' (Customer)
 // This blocks Vendors and Admins from accessing these specific customer cart routes
-router.use(authorizeRoles('customer'));
+router.use(authorizeRoles('user', 'customer'));
 
 // --- ROUTES ---
 

@@ -5,10 +5,10 @@ const { cloudinary } = require('../../utils/cloudinary');
 // @route   POST /api/product/new
 exports.createProduct = async (req, res) => {
     try {
-        // Link the product to the logged-in vendor/user
+        // 1. Link the product to the logged-in vendor
         req.body.user = req.user.id; 
 
-        // Handle Image Upload to Cloudinary via Multer
+        // 2. Handle Image Upload (via Multer + Cloudinary)
         if (req.file) {
             req.body.images = [
                 {
@@ -22,25 +22,43 @@ exports.createProduct = async (req, res) => {
                 message: "Please upload a product image" 
             });
         }
-        if (req.body.isFestivalOffer === 'true' || req.body.isFestivalOffer === true) {
-            const price = Number(req.body.price);
+
+        // 3. Convert numeric fields correctly
+        req.body.price = Number(req.body.price);
+        req.body.stock = Number(req.body.stock) || 0; // Maps to your schema's 'stock' field
+
+        // 4. Handle Festival Offer & Discount Price Logic
+        const isFestival = req.body.isFestivalOffer === 'true' || req.body.isFestivalOffer === true;
+        
+        if (isFestival) {
             const percentage = Number(req.body.discountPercentage) || 0;
-            
-            // Calculate discount and save it to a new field
-            req.body.discountPrice = price - (price * (percentage / 100));
+            // Calculate discounted price: Price - (Price * %)
+            req.body.discountPrice = req.body.price - (req.body.price * (percentage / 100));
+            req.body.isFestivalOffer = true;
         } else {
-            // If no offer, discount price is just the regular price
+            // If no offer, discountPrice is same as original price
             req.body.discountPrice = req.body.price;
+            req.body.isFestivalOffer = false;
         }
 
+        // 5. Save to Database
         const product = await Product.create(req.body);
+
+        // Populate vendor details to return in response
+        await product.populate('user', 'fullName email');
 
         res.status(201).json({
             success: true,
+            message: "Product created successfully",
             product
         });
+
     } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
+        console.error("Create Product Error:", error);
+        res.status(400).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
 };
 
@@ -48,16 +66,17 @@ exports.createProduct = async (req, res) => {
 // @route   GET /api/products
 exports.getProducts = async (req, res) => {
     try {
-        // Supports filtering by Festival Offer (e.g., /api/products?isFestivalOffer=true)
         const query = req.query.isFestivalOffer ? { isFestivalOffer: true } : {};
         
-        // You can also add category filtering here easily
         if (req.query.category) {
             query.category = req.query.category;
         }
 
-        const products = await Product.find(query).sort({ createdAt: -1 });
-        
+        const products = await Product.find(query)
+            .populate('user', 'fullName email avatar') 
+            .sort({ createdAt: -1 })
+            .lean(); // .lean() makes the query faster and return plain JS objects
+
         res.status(200).json({
             success: true,
             count: products.length,
@@ -72,7 +91,12 @@ exports.getProducts = async (req, res) => {
 // @route   GET /api/product/:id
 exports.getSingleProduct = async (req, res) => {
     try {
-        const product = await Product.findById(req.params.id).populate('user', 'fullName name email');
+        const product = await Product.findById(req.params.id)
+            .populate('user', 'fullName name email avatar') // Populates the Vendor
+            .populate({
+                path: 'reviews.user', 
+                select: 'fullName avatar' // Populates the Reviewer's profile
+            });
         
         if (!product) {
             return res.status(404).json({ success: false, message: "Product not found" });
@@ -80,10 +104,9 @@ exports.getSingleProduct = async (req, res) => {
         
         res.status(200).json({ success: true, product });
     } catch (error) {
-        res.status(400).json({ success: false, message: "Invalid ID format" });
+        res.status(400).json({ success: false, message: "Invalid ID format or Server Error" });
     }
 };
-
 // --- UPDATE PRODUCT ---
 // @route   PUT /api/product/:id
 exports.updateProduct = async (req, res) => {

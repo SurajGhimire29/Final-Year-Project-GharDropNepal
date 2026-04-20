@@ -1,4 +1,5 @@
 const User = require("../../model/userModel");
+const Order = require("../../model/orderModel")
 const cloudinary = require("cloudinary").v2;
 
 // @desc    Get User Profile
@@ -70,6 +71,74 @@ exports.deleteUserProfile = async (req, res) => {
     await User.findByIdAndUpdate(req.user._id, { isVerified: false }); // Or soft delete logic
     res.cookie("token", null, { expires: new Date(0), httpOnly: true });
     res.status(200).json({ success: true, message: "Account deactivated" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.toggleAvailability = async (req, res) => {
+  try {
+    const { isAvailable } = req.body;
+
+    // 1. Find the user (req.user._id comes from your auth middleware)
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // 2. Role Check (Safety first!)
+    if (user.role !== "deliveryBoy") {
+      return res.status(403).json({ 
+        success: false, 
+        message: "Only delivery riders can change availability status." 
+      });
+    }
+
+    // 3. Update the field
+    user.isAvailable = isAvailable;
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: `You are now ${isAvailable ? "Online" : "Offline"}`,
+      isAvailable: user.isAvailable,
+    });
+  } catch (error) {
+    console.error("Availability Toggle Error:", error);
+    res.status(500).json({ success: false, message: "Server Error" });
+  }
+};
+
+exports.getVendorStats = async (req, res) => {
+  try {
+    const freshUser = await User.findById(req.user._id).select("totalWithdrawn");
+
+    // FIX: Look for orders where the "items" array contains an item belonging to this vendor
+    const orders = await Order.find({ 
+      "items.vendor": req.user._id 
+    }).sort({ createdAt: -1 });
+
+    // FIX: Calculate 90% only from the items that belong to THIS vendor
+    const totalEarnings = orders
+      .filter(o => o.shippingStatus === "Delivered")
+      .reduce((sum, order) => {
+        // Find the specific items in this order that belong to this vendor
+        const vendorItemsSubtotal = order.items
+          .filter(item => item.vendor.toString() === req.user._id.toString())
+          .reduce((itemSum, item) => itemSum + (item.price * item.quantity), 0);
+          
+        return sum + (vendorItemsSubtotal * 0.90);
+      }, 0);
+
+    res.status(200).json({
+      success: true,
+      orders,
+      stats: {
+        totalEarnings: Math.round(totalEarnings),
+        totalWithdrawn: freshUser?.totalWithdrawn || 0 
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

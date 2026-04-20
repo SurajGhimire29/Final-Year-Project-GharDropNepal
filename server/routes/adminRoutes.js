@@ -1,41 +1,53 @@
 const express = require("express");
 const router = express.Router();
 const { 
-  getAllUsers, 
-  removeUser, 
-  updateUserStatus, 
   getAdminStats, 
+  getAllUsers, 
   getPendingApprovals, 
-  approveUser
+  approveUser, 
+  removeUser, 
+  getAvailableRiders,
+  getPendingDispatchOrders,
+  getSalesTrend,
+  getPartnerReports
 } = require("../controller/admin/adminController");
 const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth");
+const { dispatchOrder } = require("../controller/order/orderController");
+const { getWithdrawalRequests, updateWithdrawalStatus } = require("../controller/withdraw/withdrawController");
 
-
-/**
- * DEBUGGING MIDDLEWARE
- * This will print to your VS Code terminal every time an admin route is hit.
- * It helps us see if the token is even reaching the server.
- */
+// Middleware to log requests for debugging
 router.use((req, res, next) => {
-  console.log(`--- Admin Route Hit: ${req.method} ${req.url} ---`);
+  console.log(`--- Admin Route: ${req.method} ${req.url} ---`);
   next();
 });
 
-// 1. Dashboard Stats
-// Apply middlewares individually to ensure they trigger correctly per request
+// 1. Stats
 router.get("/admin/stats", isAuthenticatedUser, authorizeRoles("admin"), getAdminStats);
 
-// 2. User Directory (GET http://localhost:3000/admin/users)
+// 2. Fetch Users
 router.get("/admin/fetch-all-customers", isAuthenticatedUser, authorizeRoles("admin"), getAllUsers);
 
-// 3. Pending Approvals
+// 3. Verification Hub: Fetch Pending
 router.get("/admin/pending-approvals", isAuthenticatedUser, authorizeRoles("admin"), getPendingApprovals);
 
-router.get("/admin/approve-user/:id", isAuthenticatedUser, authorizeRoles("admin"), approveUser);
+// 4. Verification Hub: Approve/Reject (MUST BE PUT)
+router.put("/admin/approve-user/:id", isAuthenticatedUser, authorizeRoles("admin"), approveUser);
 
-// 5. Remove User 
+// 5. Remove User
 router.delete("/admin/user/remove/:id", isAuthenticatedUser, authorizeRoles("admin"), removeUser);
 
+router.get("/admin/delivery-boys/active", isAuthenticatedUser, authorizeRoles("admin"), getAvailableRiders);
+
+router.get("/admin/orders/pending-dispatch", isAuthenticatedUser, authorizeRoles("admin"), getPendingDispatchOrders);
+
+router.route('/admin/order-dispatch').put(isAuthenticatedUser, authorizeRoles('admin'), dispatchOrder);
+
+router.get("/admin/sales-trend", isAuthenticatedUser, authorizeRoles('admin'), getSalesTrend);
+
+router.get("/admin/reports", isAuthenticatedUser, authorizeRoles('admin'), getPartnerReports);
+
+router.get("/admin/withdrawals", isAuthenticatedUser, authorizeRoles('admin'), getWithdrawalRequests);
+router.put("/admin/withdrawal/:id", isAuthenticatedUser, authorizeRoles('admin'), updateWithdrawalStatus);
 
 
 module.exports = router;
