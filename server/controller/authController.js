@@ -88,15 +88,13 @@ const signUp = async (req, res) => {
         try {
             await sendOTPEmail(cleanEmail, otp);
         } catch (emailErr) {
-            console.error("Email Service Error:", emailErr);
-            // Optionally: return res.status(500).json({message: "Failed to send OTP"});
+            // Handle email service failure
         }
 
         res.status(200).json({ success: true, message: "OTP sent to your email." });
 
     } catch (error) {
-        // IMPORTANT: Look at your Node.js terminal/console to see this log!
-        console.error("SIGNUP CRASH ERROR:", error); 
+        // Handle signup errors
         res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -262,7 +260,6 @@ const signIn = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Signin Error:", error);
         return res.status(500).json({ success: false, message: "Sign in error" });
     }
 };

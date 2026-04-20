@@ -5,6 +5,7 @@ import {
   ShoppingBasket, ArrowLeft, Star, Tag, User, 
   CheckCircle2, MessageSquare, Send, Quote, Loader2 
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 const SingleProductPage = () => {
   const { id } = useParams();
@@ -53,7 +54,7 @@ const SingleProductPage = () => {
   const handleAddToCart = async () => {
     const userRole = localStorage.getItem("userRole");
     if (!userRole) {
-      alert("Please sign in to add items to your basket!");
+      toast.error("Please sign in to add items to your basket!");
       navigate("/signin");
       return;
     }
@@ -65,11 +66,12 @@ const SingleProductPage = () => {
         { withCredentials: true }
       );
       if (response.data.success) {
+        toast.success("Added to GharDrop Basket!");
         setSuccessMsg(true);
         setTimeout(() => setSuccessMsg(false), 3000);
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to add to basket");
+      toast.error(err.response?.data?.message || "Failed to add to basket");
     } finally {
       setAdding(false);
     }
@@ -91,7 +93,7 @@ const SingleProductPage = () => {
         await fetchProduct();
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to submit review");
+      toast.error(err.response?.data?.message || "Failed to submit review");
     } finally {
       setSubmittingReview(false);
     }

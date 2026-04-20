@@ -1,10 +1,10 @@
 const mongoose = require('mongoose');
 const Order = require('../../model/orderModel');
 const Product = require("../../model/productModel");
-const Cart = require("../../model/cartModel"); // Ensure you have your Cart model imported
+const Cart = require("../../model/cartModel"); 
+const Notification = require("../../model/notificationModel");
 
-// 1. Create New Order (Customer Side)
-// 1. Create New Order (Customer Side)
+// 1. Create New Order
 exports.createOrder = async (req, res) => {
     try {
         const { items, shippingAddress, paymentDetails } = req.body;
@@ -21,7 +21,15 @@ exports.createOrder = async (req, res) => {
                 throw new Error(`Product ${item.product} not found`);
             }
 
-            // DISCOUNT LOGIC: Use discountPrice if available
+            if (product.stock < item.quantity) {
+                throw new Error(`Insufficient stock for product: ${product.name}`);
+            }
+
+            product.stock -= item.quantity;
+            product.soldQuantity = (product.soldQuantity || 0) + item.quantity;
+            await product.save();
+
+            // Apply discount price if it exists
             const finalPrice = (product.discountPrice && product.discountPrice > 0) 
                 ? product.discountPrice 
                 : product.price;
@@ -40,8 +48,7 @@ exports.createOrder = async (req, res) => {
         // 2. Calculate Subtotal
         const itemTotal = itemsWithVendor.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-        // --- 3. DYNAMIC DELIVERY CHARGE LOGIC (5%) ---
-        // We calculate 5% of the itemTotal
+        // Calculate delivery charge (5% of items total)
         const DELIVERY_CHARGE = itemTotal * 0.05; 
 
         // 4. Calculate Final Total (Items + Delivery)
@@ -74,7 +81,6 @@ exports.createOrder = async (req, res) => {
         res.status(201).json({ success: true, order: newOrder });
 
     } catch (error) {
-        console.error("Order Creation Error:", error.message);
         res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -126,7 +132,6 @@ exports.getOrderDetails = async (req, res) => {
 
         res.status(200).json({ success: true, order });
     } catch (error) {
-        console.error("Single Order Error:", error);
         res.status(500).json({ success: false, message: error.message });
     }
 };
@@ -281,6 +286,13 @@ exports.updateOrderStatus = async (req, res) => {
             },
             { new: true }
         );
+
+        // Create Notification for Customer
+        await Notification.create({
+            user: updatedOrder.user,
+            title: "Order Delivered!",
+            message: `Your order #${id.slice(-6).toUpperCase()} has been successfully delivered. Thank you for choosing GharDrop!`,
+        });
 
         res.status(200).json({ success: true, order: updatedOrder });
     } catch (error) {

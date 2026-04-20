@@ -34,6 +34,11 @@ const bannerSchema = new mongoose.Schema({
         enum: ["pending", "approved", "rejected"],
         default: "pending" 
     },
+    withdrawal: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Withdrawal',
+        default: null
+    },
     // ------------------------------------------
     isActive: {
         type: Boolean,

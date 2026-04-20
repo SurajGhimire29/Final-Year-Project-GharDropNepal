@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 exports.connectDatabase = async() => {
     try {
         await mongoose.connect(process.env.MONGO_URI)
-        console.log("Ghar Drop Nepal DB connected");
+        console.log("✅ Database connected: Ghar Drop Nepal");
         
         
     } catch (error) {

@@ -131,13 +131,60 @@ exports.getVendorStats = async (req, res) => {
         return sum + (vendorItemsSubtotal * 0.90);
       }, 0);
 
+    // 3. FETCH BANNER CHARGES and Payouts for this vendor
+    const Withdrawal = require("../../model/withDrawModel");
+    const vendorTransactions = await Withdrawal.find({ 
+      vendor: req.user._id, 
+      status: "Completed" 
+    });
+    
+    const totalWithdrawn = vendorTransactions.reduce((sum, t) => sum + t.amount, 0);
+    const totalBannerCharges = vendorTransactions
+      .filter(t => t.type === "Banner Fee")
+      .reduce((sum, t) => sum + t.amount, 0);
+
     res.status(200).json({
       success: true,
       orders,
       stats: {
         totalEarnings: Math.round(totalEarnings),
-        totalWithdrawn: freshUser?.totalWithdrawn || 0 
+        totalWithdrawn,
+        totalBannerCharges 
       }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// @desc    Get Single User
+exports.getSingleUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    res.status(200).json({ success: true, user });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.updateAddress = async (req, res) => {
+  try {
+    const { addressLine, city, phoneNumber } = req.body;
+    const user = await User.findById(req.user._id);
+
+    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+
+    user.addressLine = addressLine || user.addressLine;
+    user.city = city || user.city;
+    user.phoneNumber = phoneNumber || user.phoneNumber;
+
+    await user.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Address updated successfully",
+      user,
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

@@ -20,9 +20,6 @@ const PayDelivery = () => {
         withCredentials: true 
       });
       
-      // DIAGNOSTIC LOG: Press F12 in your browser and check the "Console" tab
-      console.log("Full API Response:", res.data);
-
       if (res.data.success) {
         setRequests(res.data.withdrawals || []);
       }

@@ -111,13 +111,6 @@ const Profile = () => {
       bg: "bg-purple-50",
       path: "/notifications" 
     },
-    { 
-      icon: <MapPin size={20} />, 
-      label: "Saved Addresses", 
-      color: "text-orange-500", 
-      bg: "bg-orange-50",
-      path: "/addresses" 
-    },
   ];
 
   if (loading) return (
@@ -183,11 +176,10 @@ const Profile = () => {
       {/* Main Content */}
       <div className="max-w-4xl mx-auto px-6 -mt-16 relative z-20">
         {/* Quick Stats */}
-        <div className="grid grid-cols-3 gap-4 md:gap-6 mb-10">
+        <div className="grid grid-cols-2 gap-4 md:gap-6 mb-10">
           {[
             { label: "Orders", value: user?.orders?.length || "0", icon: <Box size={14}/> },
-            { label: "Status", value: "Active", icon: <ShieldCheck size={14}/> },
-            { label: "Points", value: "450", icon: <Settings size={14}/> }
+            { label: "Status", value: "Active", icon: <ShieldCheck size={14}/> }
           ].map((stat, i) => (
             <div key={i} className="bg-white p-6 rounded-[2.5rem] text-center shadow-lg border border-[#d8f3dc] flex flex-col items-center">
               <span className="text-[#40916c] mb-1">{stat.icon}</span>

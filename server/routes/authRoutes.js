@@ -9,7 +9,7 @@ const {
   resetPassword  // Added
 } = require("../controller/authController");
 const { isAuthenticatedUser } = require("../middlewares/auth");
-const { getUserProfile, updateUserProfile, deleteUserProfile, updateAvatar, toggleAvailability} = require("../controller/user/userController");
+const { getUserProfile, updateUserProfile, deleteUserProfile, updateAvatar, toggleAvailability, getSingleUser, updateAddress} = require("../controller/user/userController");
 const { upload } = require("../utils/cloudinary"); 
 const authRouter = express.Router();
 
@@ -43,7 +43,9 @@ authRouter.get("/me", isAuthenticatedUser, (req, res) => {
 });
 
 authRouter.get("/user/profile", isAuthenticatedUser, getUserProfile);
+authRouter.get("/user/:id", getSingleUser);
 authRouter.put("/user/update", isAuthenticatedUser, updateUserProfile);
+authRouter.put("/user/address", isAuthenticatedUser, updateAddress);
 
 authRouter.put(
   "/user/update-avatar", 

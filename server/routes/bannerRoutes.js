@@ -7,7 +7,8 @@ const {
   toggleBannerStatus,
   requestBanner,        // Added for Vendors
   getPendingRequests,   // Added for Admin
-  handleBannerRequest   // Added for Admin Approval
+  handleBannerRequest,   // Added for Admin Approval
+  getPendingCount
 } = require("../controller/banner/bannerController");
 
 const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth");
@@ -57,6 +58,13 @@ bannerRouter.get(
   isAuthenticatedUser, 
   authorizeRoles("admin"), 
   getPendingRequests
+);
+
+bannerRouter.get(
+  "/admin/banners/pending-count",
+  isAuthenticatedUser,
+  authorizeRoles("admin"),
+  getPendingCount
 );
 
 bannerRouter.put(

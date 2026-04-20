@@ -2,52 +2,37 @@ import React from 'react';
 import { Leaf, Users, ShieldCheck, Target, Award, ArrowRight, MapPin, Sprout, ShoppingBasket } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from "../../assets/image.png";
-import ownerPhoto from "../../assets/suraj.png"; 
+import ownerPhoto from "../../assets/me.jpg";
 
 const AboutUs = () => {
   return (
     <div className="bg-[#f0f9f4] min-h-screen font-sans overflow-x-hidden text-[#1b4332]">
       
       {/* --- VIBRANT HERO SECTION --- */}
-      <section className="relative bg-white rounded-b-[4rem] md:rounded-b-[6rem] overflow-hidden shadow-lg border-b border-[#e8f5e9]">
-        <div className="flex flex-col md:flex-row items-stretch">
+      <section className="relative bg-[#1b4332] rounded-b-[4rem] md:rounded-b-[6rem] overflow-hidden shadow-lg py-24 md:py-32 px-6">
+        <div className="absolute top-[-20%] left-[-10%] w-[500px] h-[500px] bg-[#2d6a4f] rounded-full blur-[100px] opacity-50 pointer-events-none"></div>
+        <div className="absolute bottom-[-20%] right-[-10%] w-[500px] h-[500px] bg-[#ffb703] rounded-full blur-[120px] opacity-10 pointer-events-none"></div>
+        
+        <div className="relative z-10 max-w-4xl mx-auto text-center space-y-8 flex flex-col items-center">
+            <img src={logo} alt="GharDrop Logo" className="w-48 brightness-0 invert hover:scale-105 transition-transform" />
             
-            {/* Left: Branding & Text */}
-            <div className="w-full md:w-1/2 p-12 md:p-20 flex flex-col justify-center bg-[#1b4332] relative">
-                <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-[#2d6a4f] rounded-full blur-[100px] opacity-50 pointer-events-none"></div>
-                
-                <div className="relative z-10 space-y-6 text-center md:text-left">
-                    <img src={logo} alt="GharDrop Logo" className="w-40 mb-10 mx-auto md:mx-0 brightness-0 invert hover:scale-105 transition-transform" />
-                    
-                    <div className="inline-flex items-center gap-2 bg-[#ffb703] text-[#1b4332] px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-[0.3em]">
-                        <Sprout size={14} /> Local. Organic. Direct.
-                    </div>
-                    
-                    <h1 className="text-5xl md:text-8xl font-black text-white uppercase italic tracking-tighter mt-4 leading-[0.8] mb-8">
-                        The Soul of <br/> Nepal’s <span className="text-[#ffb703] not-italic">Harvest.</span>
-                    </h1>
-                    <p className="text-white/70 text-lg md:text-xl max-w-2xl mt-8 font-medium leading-relaxed">
-                        GharDrop bridges the gap between hardworking local farmers and your dinner table, delivering pure, traceable freshness.
-                    </p>
-                </div>
+            <div className="inline-flex items-center gap-2 bg-[#ffb703] text-[#1b4332] px-5 py-2 rounded-full text-xs font-black uppercase tracking-[0.3em]">
+                <Sprout size={16} /> Local. Organic. Direct.
             </div>
-
-            {/* Right: Full Color Image Section */}
-            <div className="w-full md:w-1/2 relative min-h-[400px] md:min-h-full">
-                <img 
-                    src="https://images.unsplash.com/photo-1590793132791-326920409748?q=80&w=1920&auto=format&fit=crop" 
-                    alt="Vibrant Nepali Farm" 
-                    className="absolute inset-0 w-full h-full object-cover hover:scale-105 transition-transform duration-1000"
-                />
-                <div className="absolute inset-0 bg-gradient-to-r from-[#1b4332]/80 via-transparent to-transparent"></div>
-            </div>
+            
+            <h1 className="text-5xl md:text-8xl font-black text-white uppercase italic tracking-tighter leading-[0.9]">
+                The Soul of <br/> Nepal’s <span className="text-[#ffb703] not-italic">Harvest.</span>
+            </h1>
+            <p className="text-white/70 text-lg md:text-2xl max-w-2xl font-medium leading-relaxed">
+                GharDrop bridges the gap between hardworking local farmers and your dinner table, delivering pure, traceable freshness.
+            </p>
         </div>
       </section>
 
       {/* --- FOUNDER SECTION --- */}
       <section className="max-w-7xl mx-auto py-24 px-6 mt-10">
         <div className="flex flex-col md:flex-row items-center gap-16">
-          <div className="w-full md:w-1/2 relative">
+          <div className="w-full md:w-5/12 relative">
             <div className="absolute -bottom-6 -right-6 w-32 h-32 border-8 border-[#ffb703] rounded-[3rem] -z-10 hidden md:block opacity-50"></div>
             
             <div className="aspect-[4/5] bg-white rounded-[4rem] relative overflow-hidden shadow-2xl border-4 border-[#ffb703]">
@@ -69,7 +54,7 @@ const AboutUs = () => {
             </div>
           </div>
           
-          <div className="w-full md:w-1/2 space-y-8">
+          <div className="w-full md:w-7/12 space-y-8">
             <h2 className="text-4xl md:text-6xl font-black text-[#1b4332] uppercase italic tracking-tighter leading-none">
               A Voice for <br/> <span className="text-[#40916c]">Nepali Agriculture</span>
             </h2>

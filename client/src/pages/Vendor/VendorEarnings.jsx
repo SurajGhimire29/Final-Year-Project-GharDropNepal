@@ -32,25 +32,16 @@ const VendorEarnings = () => {
   const fetchVendorLedger = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(`${API_URL}/vendor/stats`, { withCredentials: true });
+      const res = await axios.get(`${API_URL}/vendor/earnings-stats`, { withCredentials: true });
 
       if (res.data.success) {
-        const stats = res.data.stats || { totalEarnings: 0, totalWithdrawn: 0 };
-        const orders = res.data.orders || [];
-        const available = stats.totalEarnings - (stats.totalWithdrawn || 0);
+        const { totalEarned, totalWithdrawn, withdrawable, pending, transactions } = res.data.data;
 
         setEarningStats({
-          totalBalance: available,
-          withdrawn: stats.totalWithdrawn || 0,
-          pendingSettlement: orders
-            .filter(o => o.shippingStatus !== 'Delivered')
-            .reduce((sum, o) => {
-               const vendorSubtotal = o.items
-                ? o.items.reduce((acc, item) => acc + (item.price * item.quantity), 0)
-                : (o.totalPrice || 0);
-               return sum + (vendorSubtotal * 0.90);
-            }, 0),
-          history: orders
+          totalBalance: withdrawable,
+          withdrawn: totalWithdrawn,
+          pendingSettlement: pending,
+          history: transactions
         });
       }
     } catch (error) {
@@ -96,15 +87,12 @@ const VendorEarnings = () => {
       return { dayName: days[d.getDay()], dateString: d.toDateString(), amount: 0 };
     }).reverse();
 
-    earningStats.history.forEach(order => {
-      if (order.shippingStatus === "Delivered") {
-        const orderDate = new Date(order.updatedAt || order.createdAt).toDateString();
-        const dayMatch = last7Days.find(d => d.dateString === orderDate);
+    earningStats.history.forEach(item => {
+      if (item.type === "Income" && item.status === "Delivered") {
+        const itemDate = new Date(item.date).toDateString();
+        const dayMatch = last7Days.find(d => d.dateString === itemDate);
         if (dayMatch) {
-          const vendorShare = order.items 
-            ? order.items.reduce((sum, item) => sum + (item.price * item.quantity), 0) * 0.90
-            : (order.totalPrice || 0) * 0.90;
-          dayMatch.amount += Math.round(vendorShare);
+          dayMatch.amount += Math.round(item.amount);
         }
       }
     });
@@ -231,14 +219,24 @@ const VendorEarnings = () => {
               {earningStats.history.length > 0 ? (
                 earningStats.history.map((item) => (
                   <div key={item._id} className="flex justify-between items-center p-5 bg-[#f0f9f4] rounded-2xl border-2 border-transparent hover:border-[#40916c] transition-all">
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-wider text-[#1b4332]">Order #{item._id.slice(-6).toUpperCase()}</p>
-                      <p className="text-[10px] font-bold text-[#40916c]">{new Date(item.createdAt).toDateString()}</p>
+                    <div className="flex items-center gap-4">
+                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                        item.type === 'Income' ? 'bg-green-100 text-green-600' : 
+                        item.type === 'Banner Fee' ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'
+                      }`}>
+                        <History size={18} />
+                      </div>
+                      <div>
+                        <p className="text-xs font-black uppercase tracking-wider text-[#1b4332]">{item.reference}</p>
+                        <p className="text-[10px] font-bold text-[#40916c]">{new Date(item.date).toDateString()} • {item.type}</p>
+                      </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-black text-[#1b4332]">Rs. {Math.round((item.totalPrice || 0) * 0.90)}</p>
-                      <span className={`text-[9px] font-black uppercase ${item.shippingStatus === 'Delivered' ? 'text-green-600' : 'text-orange-500'}`}>
-                        {item.shippingStatus}
+                      <p className={`font-black text-lg ${item.type === 'Income' ? 'text-[#1b4332]' : 'text-red-500'}`}>
+                        {item.type === 'Income' ? '+' : '-'} Rs. {Math.round(item.amount).toLocaleString()}
+                      </p>
+                      <span className={`text-[9px] font-black uppercase ${item.status === 'Delivered' || item.status === 'Completed' ? 'text-green-600' : 'text-orange-500'}`}>
+                        {item.status}
                       </span>
                     </div>
                   </div>

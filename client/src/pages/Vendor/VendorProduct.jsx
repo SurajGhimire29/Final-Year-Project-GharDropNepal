@@ -132,11 +132,27 @@ const VendorProduct = () => {
                     {product.name}
                   </h3>
                   
-                  <div className="flex justify-between items-end mb-6">
+                  <div className="flex justify-between items-end mb-4">
                     <p className="text-3xl font-black text-[#1b4332]">Rs.{product.price}</p>
                     <span className="text-xs font-bold text-gray-400 bg-[#f0f9f4] px-3 py-1 rounded-lg">
                       {product.unit || '1kg'}
                     </span>
+                  </div>
+
+                  {/* Stock Statistics Section */}
+                  <div className="bg-[#f8fdfa] border border-[#d8f3dc] p-3 rounded-xl mb-6 shadow-sm">
+                    <div className="flex justify-between text-xs font-black text-gray-500 mb-2 uppercase tracking-wide">
+                      <span>Total Added</span>
+                      <span className="text-[#1b4332]">{(product.stock || 0) + (product.soldQuantity || 0)}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-black text-gray-500 mb-2 uppercase tracking-wide">
+                      <span>Remaining</span>
+                      <span className="text-[#40916c]">{product.stock || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-xs font-black text-gray-500 uppercase tracking-wide">
+                      <span>Sold</span>
+                      <span className="text-[#ffb703]">{product.soldQuantity || 0}</span>
+                    </div>
                   </div>
 
                   <div className="flex gap-3">

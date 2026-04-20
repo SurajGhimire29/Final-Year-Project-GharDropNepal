@@ -31,7 +31,8 @@ exports.requestPayout = async (req, res) => {
     const payoutRequest = await Withdrawal.create({
       rider: riderId,
       amount: Math.round(currentBalance),
-      status: 'Pending'
+      status: 'Pending',
+      type: 'Payout'
     });
 
     res.status(201).json({
@@ -65,13 +66,12 @@ exports.requestVendorPayout = async (req, res) => {
     // 3. Subtract what's already been withdrawn/requested
     const transactions = await Withdrawal.find({ vendor: vendorId });
     const totalWithdrawnOrRequested = transactions
-      .filter(t => t.status === "Completed" || t.status === "Pending")
+      .filter(t => t.status === "Completed" || t.status === "Pending" || t.status === "Unpaid")
       .reduce((sum, t) => sum + t.amount, 0);
 
     const currentBalance = totalEarned - totalWithdrawnOrRequested;
 
-    // 4. CRITICAL CHECK: Log this to your terminal to see what the backend sees
-    console.log("Calculated Balance for Payout:", currentBalance);
+    // Log calculated balance for debugging (optional)
 
     if (currentBalance < 1000) {
       return res.status(400).json({ 
@@ -84,7 +84,8 @@ exports.requestVendorPayout = async (req, res) => {
     const payoutRequest = await Withdrawal.create({
       vendor: vendorId,
       amount: Math.floor(currentBalance),
-      status: 'Pending'
+      status: 'Pending',
+      type: 'Payout'
     });
 
     res.status(201).json({ success: true, message: "Request Sent!", data: payoutRequest });
@@ -139,23 +140,70 @@ exports.getVendorEarningsStats = async (req, res) => {
         // 4. Get Withdrawal history to calculate "Withdrawable" balance
         const transactions = await Withdrawal.find({ 
             vendor: vendorId 
-        }).sort({ requestedAt: -1 }).lean();
+        }).sort({ requestedAt: -1 }); // Removed .lean() to allow .save()
 
-        // We subtract "Completed" (already paid) and "Pending" (currently requested)
-        const totalWithdrawnOrRequested = transactions
+        // --- AUTO-SETTLE DEBTS (Banner Fees) ---
+        let currentTempBalance = totalEarned - transactions
             .filter(t => t.status === "Completed" || t.status === "Pending")
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
+        for (const t of transactions) {
+            if (t.status === "Unpaid" && t.type === "Banner Fee") {
+                if (currentTempBalance >= t.amount) {
+                    t.status = "Completed";
+                    t.paidAt = Date.now();
+                    await t.save();
+                    
+                    const User = require("../../model/userModel");
+                    await User.findByIdAndUpdate(vendorId, { $inc: { totalWithdrawn: t.amount } });
+                    currentTempBalance -= t.amount;
+                }
+            }
+        }
+
+        const totalWithdrawnOrRequested = transactions
+            .filter(t => t.status === "Completed" || t.status === "Pending" || t.status === "Unpaid")
             .reduce((sum, t) => sum + Number(t.amount), 0);
 
         // Final Calculation
         const withdrawableBalance = Math.max(0, totalEarned - totalWithdrawnOrRequested);
 
+        // 5. Build Combined Ledger History
+        // Orders are Income (+), Withdrawals/Fees are Deductions (-)
+        const history = [
+            ...orders.map(o => ({
+                _id: o._id,
+                date: o.updatedAt || o.createdAt,
+                amount: o.items
+                    .filter(item => item.vendor && item.vendor.toString() === vendorId.toString())
+                    .reduce((sum, item) => sum + (Number(item.price) * Number(item.quantity)), 0) * 0.90,
+                type: 'Income',
+                reference: `Order #${o._id.slice(-6).toUpperCase()}`,
+                status: o.shippingStatus
+            })),
+            ...transactions.map(t => ({
+                _id: t._id,
+                date: t.paidAt || t.requestedAt,
+                amount: t.amount,
+                type: t.type === 'Banner Fee' ? 'Banner Fee' : 'Payout',
+                reference: t.type === 'Banner Fee' ? 'Marketing Charge' : 'Cash Withdrawal',
+                status: t.status
+            }))
+        ].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+        // Calculate actual paid amount from history (Excluding Unpaid/Pending)
+        const totalPaid = transactions
+            .filter(t => t.status === "Completed")
+            .reduce((sum, t) => sum + Number(t.amount), 0);
+
         res.status(200).json({
             success: true,
             data: {
                 totalEarned: Math.round(totalEarned),
+                totalWithdrawn: totalPaid,
                 withdrawable: Math.round(withdrawableBalance),
                 pending: Math.round(pending),
-                transactions: transactions
+                transactions: history 
             }
         });
 
@@ -170,8 +218,7 @@ exports.getVendorEarningsStats = async (req, res) => {
 // Controller: getWithdrawalRequests
 // Updated getWithdrawalRequests in your controller
 exports.getWithdrawalRequests = async (req, res) => {
-  console.log("!!! ENTERED GETWITHDRAWALREQUESTS FUNCTION !!!");
-  console.log("Query Role:", req.query.role);
+  // Fetch withdrawal requests based on role
 
   try {
     const { role } = req.query;
@@ -194,10 +241,9 @@ exports.getWithdrawalRequests = async (req, res) => {
         model: User,
         select: 'fullName phoneNumber email shopName' // Added shopName for vendors
       })
-      .sort({ createdAt: -1 }) // Usually 'createdAt' unless you specifically named it 'requestedAt'
+      .sort({ requestedAt: -1 }) // Use requestedAt instead of createdAt
       .lean();
 
-    console.log(`--- RESULTS FOUND: ${withdrawals.length} ---`);
 
     return res.status(200).json({
       success: true,

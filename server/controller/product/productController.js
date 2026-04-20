@@ -54,7 +54,6 @@ exports.createProduct = async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Create Product Error:", error);
         res.status(400).json({ 
             success: false, 
             message: error.message 

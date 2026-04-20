@@ -25,7 +25,8 @@ const VendorHome = () => {
     activeProducts: 0,
     totalOrders: 0,
     totalEarnings: 0,
-    todayRevenue: 0
+    todayRevenue: 0,
+    bannerCharges: 0
   });
 
   const API_URL = "http://localhost:3000";
@@ -82,7 +83,8 @@ const VendorHome = () => {
           activeProducts: myFilteredProducts.length, // Uses the filtered list count
           totalOrders: orderCount,
           totalEarnings: Math.round(earningsValue),
-          todayRevenue: Math.round(revenueToday)
+          todayRevenue: Math.round(revenueToday),
+          bannerCharges: statsRes.data.stats?.totalBannerCharges || 0
         });
 
       } catch (error) {
@@ -101,7 +103,6 @@ const VendorHome = () => {
       await axios.get(`${API_URL}/signout`, { withCredentials: true });
       navigate("/signin");
     } catch (error) {
-      console.log("Logout error:", error);
     }
   };
 
@@ -110,6 +111,7 @@ const VendorHome = () => {
     { label: "Total Orders", value: statsData.totalOrders, icon: <ShoppingBag size={24} />, color: "bg-[#1b4332]" },
     { label: "Total Earnings", value: `Rs. ${statsData.totalEarnings.toLocaleString()}`, icon: <DollarSign size={24} />, color: "bg-[#2d6a4f]" },
     { label: "Today's Revenue", value: `Rs. ${statsData.todayRevenue.toLocaleString()}`, icon: <TrendingUp size={24} />, color: "bg-[#ffb703]" },
+    { label: "Banner Charges", value: `Rs. ${statsData.bannerCharges.toLocaleString()}`, icon: <ImageIcon size={24} />, color: "bg-[#40916c]" },
   ];
 
   return (

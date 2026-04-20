@@ -18,8 +18,13 @@ const withdrawalSchema = new mongoose.Schema({
   status: { 
     type: String, 
     // Added 'Completed' to match your Frontend and Controller logic
-    enum: ['Pending', 'Approved', 'Rejected', 'Completed'], 
+    enum: ['Pending', 'Approved', 'Rejected', 'Completed', 'Unpaid'], 
     default: 'Pending' 
+  },
+  type: {
+    type: String,
+    enum: ['Payout', 'Banner Fee'],
+    default: 'Payout'
   },
   requestedAt: { 
     type: Date, 

@@ -2,6 +2,7 @@ import { useState } from "react";
 import axios from "axios";
 import { Link, useNavigate } from "react-router-dom";
 import { Camera, Store, Truck, User, ArrowRight, ShieldCheck } from "lucide-react";
+import { toast } from "react-hot-toast";
 import logo from "../../assets/image.png"; 
 
 export default function SignUp() {
@@ -27,7 +28,6 @@ export default function SignUp() {
   // --- UI & Verification States ---
   const [otp, setOtp] = useState(""); 
   const [step, setStep] = useState(1); 
-  const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
   const navigate = useNavigate();
@@ -44,10 +44,9 @@ export default function SignUp() {
   // STEP 1: Submit Registration
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
     
     if (password !== confirmPassword) {
-      setMessage("Passwords do not match");
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -87,12 +86,11 @@ export default function SignUp() {
       });
       
       if (res.data.success) {
-        setMessage(res.data.message || "OTP sent to your email!");
+        toast.success(res.data.message || "OTP sent to your email!");
         setStep(2); 
       }
     } catch (error) {
-      console.error("Signup error:", error);
-      setMessage(error.response?.data?.message || "Registration failed. Please check backend console.");
+      toast.error(error.response?.data?.message || "Registration failed.");
     } finally {
       setLoading(false);
     }
@@ -101,7 +99,6 @@ export default function SignUp() {
   const handleVerifyOTP = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
 
     try {
       const res = await axios.post("http://localhost:3000/emailotpverification", {
@@ -110,11 +107,11 @@ export default function SignUp() {
       });
 
       if (res.data.success) {
-        alert("Verification successful! Redirecting to login...");
+        toast.success("Verification successful! Welcome to GharDrop.");
         navigate("/signin");
       }
     } catch (error) {
-      setMessage(error.response?.data?.message || "Invalid OTP code");
+      toast.error(error.response?.data?.message || "Invalid OTP code");
     } finally {
       setLoading(false);
     }
@@ -261,15 +258,6 @@ export default function SignUp() {
           </div>
         )}
 
-        {message && (
-          <div className={`mt-6 p-4 rounded-2xl text-[9px] font-black uppercase tracking-widest text-center border ${
-            message.toLowerCase().includes('success') || message.toLowerCase().includes('sent') 
-              ? 'text-green-700 bg-green-50 border-green-100' 
-              : 'text-red-700 bg-red-50 border-red-100'
-          }`}>
-            {message}
-          </div>
-        )}
 
         <p className="text-center mt-8 text-[10px] font-black text-gray-400 uppercase tracking-widest">
           Already a member? <Link to="/signin" className="text-[#1b4332] hover:underline ml-1">Sign In</Link>

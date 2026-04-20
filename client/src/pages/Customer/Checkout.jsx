@@ -114,7 +114,9 @@ const Checkout = () => {
     }
   };
 
-  useEffect(() => { getUserLocation(); }, []);
+  useEffect(() => { 
+    getUserLocation(); 
+  }, []);
 
   // --- FINAL SUBMISSION LOGIC ---
   const handleConfirmOrder = async () => {
@@ -152,7 +154,7 @@ const Checkout = () => {
 
             if (data.success) {
                 toast.success("GharDrop Order Placed!");
-                navigate('/history'); 
+                navigate('/order-success', { state: { orderId: data.order?.orderId || null } }); 
             }
         } catch (error) {
             toast.error(error.response?.data?.message || "Failed to place order.");

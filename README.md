@@ -5,35 +5,42 @@ GharDrop Nepal is a high-performance web application designed for **15-minute de
 
 ---
 
-## 🌟 Key Features
+## 🌟 The Ecosystem (Role-Based Access)
 
-### 👤 Customer Experience
-* **Responsive UI:** Optimized for seamless browsing on mobile, tablet, and desktop.
-* **Quick Commerce:** Purchase daily essentials (groceries, milk, eggs) with ease.
-* **Live Order Tracking:** Real-time visual updates on the delivery boy's location using **Socket.io**.
+### 👤 Customer
 * **15-Minute Fulfillment:** Algorithm-driven logic to connect users with the nearest available vendor.
+* **Live Order Tracking:** Real-time visual updates on the delivery boy's location using **Socket.io**.
+* **Payment Flexibility:** Integrated **Khalti** for online payments and Cash on Delivery (COD).
 
-### 🏪 Vendor Portal
-* **Shop Onboarding:** Digitalize local brick-and-mortar stores.
-* **Inventory Management:** Add, edit, and manage products and stock levels.
-* **Order Dashboard:** Instant notifications for incoming orders.
+### 🏪 Vendor (The Merchant)
+* **Shop Digitalization:** A dedicated portal for local shops to manage inventory and stock levels.
+* **Smart Advertising:** Vendors can request homepage banners. If their balance is low, the system allows **"Debt-based Advertising"** (marked as Unpaid).
+* **Financial Ledger:** A full transaction history showing Income (+), Payouts (-), and Marketing Fees (-).
 
-### 🚴 Delivery Ecosystem
-* **Rider Registration:** A dedicated portal for delivery boys to register and start working.
-* **Job Management:** Real-time job alerts and navigation support.
-* **Status Updates:** Transition orders from "Picked Up" to "Delivered" with live syncing.
+### 🚴 Delivery (The Rider)
+* **Fleet Management:** Dedicated registration for riders with license verification.
+* **Live Job Alerts:** Instant notifications when an order is ready for pickup.
+* **Earnings Tracking:** Riders keep 95% of the delivery fee, with 5% going to the platform.
+
+### 🛡️ Admin (The Controller)
+* **System Treasury:** A high-level overview of total revenue, platform profit, and pending receivables.
+* **Verification Hub:** Manual audit and approval process for new Vendors and Riders.
+* **Banner Management:** Approve/Reject advertising requests with a live notification system.
 
 ---
 
-## 🛰️ Real-Time Engine (Socket.io)
-The "Live Tracking" feature is powered by WebSockets to ensure zero-latency updates:
-* **The Workflow:** When a Delivery Boy moves, the client emits a `location-update` event.
-* **The Room Logic:** The Node.js server joins the Customer and Delivery Boy into a private "Order Room."
-* **The Result:** The Customer sees the delivery icon move on their map in real-time without a page refresh.
+## 💸 The Treasury Protocol (Business Logic)
+
+The platform operates on a **Split-Revenue Model** to ensure sustainability:
+
+1. **Vendor Sales:** The vendor receives **90%** of the item price. The platform retains **10%** as commission.
+2. **Delivery Fees:** The rider receives **95%** of the delivery charge. The platform retains **5%** as a logistics fee.
+3. **Banner Fees:** A fixed fee of **Rs. 500** per banner.
+   - **Auto-Settlement:** If a vendor has no money, the banner is marked as "Unpaid." As soon as the vendor earns Rs. 500 from sales, the system automatically "cuts" the fee and moves it to Admin Profit.
 
 ---
 
-## 🛠️ Technology Stack
+## 🛰️ Technical Architecture
 
 | Layer | Technology |
 | :--- | :--- |
@@ -42,6 +49,23 @@ The "Live Tracking" feature is powered by WebSockets to ensure zero-latency upda
 | **Database** | MongoDB (Mongoose ODM) |
 | **Real-time** | **Socket.io** |
 | **Auth** | JSON Web Tokens (JWT) & Bcrypt |
+| **Storage** | Cloudinary |
+
+---
+
+## 🎓 Viva Defense: Key Questions & Answers
+
+**Q: How does the live tracking work?**
+> **A:** It uses Socket.io. When a rider moves, their app emits a `location-update`. The server broadcasts this to the customer's "Order Room." The customer's map updates in real-time without refreshing the page.
+
+**Q: How do you handle vendor advertising if they have no money?**
+> **A:** I implemented a **Debt Management System**. The banner is approved but marked as "Unpaid." The fee remains as a "Pending Receivable" for the Admin and a "Liability" for the Vendor. The system automatically settles this debt once the vendor makes sales.
+
+**Q: Is the system secure?**
+> **A:** Yes. We use **JWT (JSON Web Tokens)** stored in HttpOnly cookies for session management, and **Bcrypt** for password hashing. We also use Role-Based Access Control (RBAC) to ensure a Vendor cannot access the Admin panel.
+
+**Q: Why choose the MERN stack?**
+> **A:** MERN allows for a unified JavaScript ecosystem. Using JSON throughout the stack (from MongoDB to React) makes development faster and allows for high-performance data handling.
 
 ---
 
@@ -49,4 +73,14 @@ The "Live Tracking" feature is powered by WebSockets to ensure zero-latency upda
 
 1. **Clone the repository:**
    ```bash
-   git clone [https://github.com/SurajGhimire29/Final-Year-Project-GharDropNepal.git](https://github.com/SurajGhimire29/Final-Year-Project-GharDropNepal.git)
+   git clone https://github.com/SurajGhimire29/Final-Year-Project-GharDropNepal.git
+   ```
+2. **Server Setup:**
+   - `cd server`
+   - `npm install`
+   - Create `.env` file with Mongo URI and Cloudinary keys.
+   - `npm start`
+3. **Client Setup:**
+   - `cd client`
+   - `npm install`
+   - `npm run dev`

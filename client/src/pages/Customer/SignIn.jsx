@@ -11,6 +11,7 @@ import {
   ArrowRight,
   CheckCircle2,
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 import axios from "axios";
 
@@ -25,14 +26,12 @@ export default function SignIn() {
 
   const [loading, setLoading] = useState(false);
 
-  const [errorMessage, setErrorMessage] = useState("");
 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    setErrorMessage("");
 
     setLoading(true);
 
@@ -59,6 +58,7 @@ export default function SignIn() {
         }
 
         window.dispatchEvent(new Event("storage"));
+        toast.success(`Welcome back, ${data.user.fullName}!`);
 
         switch (data.user.role) {
           case "admin":
@@ -78,10 +78,10 @@ export default function SignIn() {
             break;
         }
       } else {
-        setErrorMessage(data.message || "Invalid email or password.");
+        toast.error(data.message || "Invalid email or password.");
       }
     } catch (error) {
-      setErrorMessage(
+      toast.error(
         error.response?.data?.message || "Connection failed. Please try again.",
       );
     } finally {
@@ -225,11 +225,6 @@ export default function SignIn() {
               </div>
             </div>
 
-            {errorMessage && (
-              <div className="bg-red-50 text-red-600 text-[11px] font-black p-4 rounded-xl border-l-4 border-red-500 animate-[shake_0.5s_ease-in-out]">
-                {errorMessage.toUpperCase()}
-              </div>
-            )}
 
             <button
               type="submit"

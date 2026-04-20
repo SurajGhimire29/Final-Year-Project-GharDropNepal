@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Camera 
 } from "lucide-react";
+import { toast } from 'react-hot-toast';
 
 const VendorProfile = () => {
   const { id: urlId } = useParams();
@@ -94,11 +95,11 @@ const VendorProfile = () => {
           ...prev,
           storeImage: newImage 
         }));
-        alert("Store image updated successfully!");
+        toast.success("Store image updated successfully!");
       }
     } catch (err) {
       console.error("Upload error:", err);
-      alert("Failed to update store image. Check console for details.");
+      toast.error("Failed to update store image.");
     } finally {
       setUploading(false);
       e.target.value = null; // Reset input
@@ -195,7 +196,7 @@ const VendorProfile = () => {
                     <MapPin size={16} className="text-[#ffb703]" /> {vendor?.storeAddress || "Kathmandu, Nepal"}
                 </div>
                 <div className="flex items-center gap-2 bg-[#f0f9f4] px-3 py-2 rounded-xl">
-                    <Calendar size={16} className="text-[#ffb703]" /> Joined 2026
+                    <Calendar size={16} className="text-[#ffb703]" /> Joined {vendor?.createdAt ? new Date(vendor.createdAt).getFullYear() : new Date().getFullYear()}
                 </div>
               </div>
             </div>

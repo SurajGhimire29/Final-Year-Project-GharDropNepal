@@ -45,9 +45,16 @@ discountPrice: {
       message: "Please select correct category"
     }
   },
+  // --- Inventory Tracking ---
+  // Represents the current remaining quantity available for purchase
   stock: {
     type: Number,
     required: [true, "Please enter product stock"],
+    default: 0
+  },
+  // Tracks the total lifetime sales of this specific product
+  soldQuantity: {
+    type: Number,
     default: 0
   },
   tag: {

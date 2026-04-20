@@ -15,22 +15,18 @@ const { isAuthenticatedUser, authorizeRoles } = require("../middlewares/auth");
 const { dispatchOrder } = require("../controller/order/orderController");
 const { getWithdrawalRequests, updateWithdrawalStatus } = require("../controller/withdraw/withdrawController");
 
-// Middleware to log requests for debugging
-router.use((req, res, next) => {
-  console.log(`--- Admin Route: ${req.method} ${req.url} ---`);
-  next();
-});
 
-// 1. Stats
+
+// 1. Dashboard Statistics
 router.get("/admin/stats", isAuthenticatedUser, authorizeRoles("admin"), getAdminStats);
 
-// 2. Fetch Users
+// 2. User Management
 router.get("/admin/fetch-all-customers", isAuthenticatedUser, authorizeRoles("admin"), getAllUsers);
 
-// 3. Verification Hub: Fetch Pending
+// 3. Verification Hub: Pending Registrations
 router.get("/admin/pending-approvals", isAuthenticatedUser, authorizeRoles("admin"), getPendingApprovals);
 
-// 4. Verification Hub: Approve/Reject (MUST BE PUT)
+// 4. Verification Hub: Approve or Reject
 router.put("/admin/approve-user/:id", isAuthenticatedUser, authorizeRoles("admin"), approveUser);
 
 // 5. Remove User
@@ -38,14 +34,17 @@ router.delete("/admin/user/remove/:id", isAuthenticatedUser, authorizeRoles("adm
 
 router.get("/admin/delivery-boys/active", isAuthenticatedUser, authorizeRoles("admin"), getAvailableRiders);
 
+// 7. Order Dispatch Management
 router.get("/admin/orders/pending-dispatch", isAuthenticatedUser, authorizeRoles("admin"), getPendingDispatchOrders);
 
 router.route('/admin/order-dispatch').put(isAuthenticatedUser, authorizeRoles('admin'), dispatchOrder);
 
+// 8. Analytics & Reports
 router.get("/admin/sales-trend", isAuthenticatedUser, authorizeRoles('admin'), getSalesTrend);
 
 router.get("/admin/reports", isAuthenticatedUser, authorizeRoles('admin'), getPartnerReports);
 
+// 9. Financial Management
 router.get("/admin/withdrawals", isAuthenticatedUser, authorizeRoles('admin'), getWithdrawalRequests);
 router.put("/admin/withdrawal/:id", isAuthenticatedUser, authorizeRoles('admin'), updateWithdrawalStatus);
 

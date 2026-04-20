@@ -8,7 +8,7 @@ const Order = require("../../model/orderModel");
 
 exports.getAdminStats = async (req, res) => {
   try {
-    const [userCount, productCount, vendorCount, deliveryCount, orders] = await Promise.all([
+    const [userCount, productCount, vendorCount, deliveryCount, orders, bannerFees] = await Promise.all([
       User.countDocuments({ role: "customer" }),
       Product.countDocuments(),
       User.countDocuments({ role: "vendor" }),
@@ -19,7 +19,9 @@ exports.getAdminStats = async (req, res) => {
           { orderStatus: "Delivered" },
           { orderStatus: "Completed" }
         ] 
-      })
+      }),
+      // Fetch all banner fee transactions (both paid and debt)
+      require("../../model/withDrawModel").find({ type: "Banner Fee", status: { $in: ["Completed", "Unpaid"] } })
     ]);
 
     let totalRevenue = 0;
@@ -47,6 +49,17 @@ exports.getAdminStats = async (req, res) => {
       totalAdminProfit += (adminVendorCut + adminDeliveryCut);
     });
 
+    // Add Banner Fees to Total Admin Profit
+    const totalBannerFeeRevenue = bannerFees
+      .filter(f => f.status === "Completed")
+      .reduce((sum, fee) => sum + fee.amount, 0);
+
+    const totalBannerReceivable = bannerFees
+      .filter(f => f.status === "Unpaid")
+      .reduce((sum, fee) => sum + fee.amount, 0);
+
+    totalAdminProfit += totalBannerFeeRevenue;
+
     // Final Payouts
     const vendorPayout = totalProductSubtotal * 0.90; // 90% of 800 = 720
     const deliveryOwed = totalDeliveryFeesCollected * 0.95; // 95% of 40 = 38
@@ -58,11 +71,13 @@ exports.getAdminStats = async (req, res) => {
         totalProducts: productCount, 
         totalVendors: vendorCount, 
         totalDelivery: deliveryCount,
-        totalRevenue,               // Should show 840
-        vendorProductSales: totalProductSubtotal, // Should show 800
-        vendorPayout,               // Should show 720
-        deliveryOwed,               // Should show 38
-        adminProfit: totalAdminProfit // Should show 82
+        totalRevenue,
+        vendorProductSales: totalProductSubtotal,
+        vendorPayout,
+        deliveryOwed,
+        adminProfit: totalAdminProfit,
+        bannerRevenue: totalBannerFeeRevenue,
+        bannerReceivable: totalBannerReceivable 
       } 
     });
   } catch (error) {
@@ -169,13 +184,7 @@ exports.getPendingDispatchOrders = async (req, res) => {
     .populate("user", "fullName phoneNumber") 
     .sort({ createdAt: -1 });
 
-    // DEBUG LOG: Check your terminal! 
-    // This will show you exactly what the database is returning.
-    console.log(`Found ${orders.length} potential dispatch orders.`);
-    if (orders.length > 0) {
-      console.log("Sample Order Status:", orders[0].shippingStatus);
-      console.log("Sample Order Payment:", orders[0].paymentInfo || orders[0].paymentDetails);
-    }
+    // Process found orders
 
     res.status(200).json({ 
       success: true, 
@@ -270,10 +279,33 @@ exports.getPartnerReports = async (req, res) => {
           orderCount: { $size: "$uniqueOrderIds" },
           totalSales: "$totalVolume",
           // System takes 10% from the item sales only
-          grossRevenue: { $multiply: ["$totalVolume", 0.10] }
+          commissionRevenue: { $multiply: ["$totalVolume", 0.10] }
         }
       }
     ]);
+
+    // 1b. FETCH BANNER CHARGES for each vendor
+    const Withdrawal = require("../../model/withDrawModel");
+    const bannerCharges = await Withdrawal.aggregate([
+      { $match: { type: "Banner Fee", status: "Completed" } },
+      {
+        $group: {
+          _id: "$vendor",
+          totalBannerFees: { $sum: "$amount" }
+        }
+      }
+    ]);
+
+    // Merge Banner Charges into Vendor Report
+    const mergedVendorReport = vendorReport.map(report => {
+      const bannerCharge = bannerCharges.find(bc => bc._id.toString() === report._id.toString());
+      const bannerFee = bannerCharge ? bannerCharge.totalBannerFees : 0;
+      return {
+        ...report,
+        bannerFees: bannerFee,
+        totalPlatformRevenue: report.commissionRevenue + bannerFee
+      };
+    });
 
     // 2. DELIVERY REPORT: 5% Platform Cut from the Delivery Fee
     const deliveryReport = await Order.aggregate([
@@ -316,11 +348,10 @@ exports.getPartnerReports = async (req, res) => {
 
     res.status(200).json({ 
       success: true, 
-      vendorReport: vendorReport || [], 
+      vendorReport: mergedVendorReport || [], 
       deliveryReport: deliveryReport || [] 
     });
   } catch (error) {
-    console.error("REPORT ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

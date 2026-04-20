@@ -75,10 +75,10 @@ const PaymentStatus = () => {
                         </div>
                         <div className="pt-4 flex flex-col gap-3">
                             <button 
-                                onClick={() => navigate('/orders/me')} 
+                                onClick={() => navigate('/order-success')} 
                                 className="w-full bg-[#1b4332] text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:scale-[1.02] transition-transform shadow-lg shadow-[#1b4332]/20"
                             >
-                                Track My Order
+                                View Order Status
                             </button>
                             <button 
                                 onClick={() => navigate('/')} 

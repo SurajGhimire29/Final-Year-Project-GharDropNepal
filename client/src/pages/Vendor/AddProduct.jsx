@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ImagePlus, Package, Save, ArrowLeft, Percent } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { toast } from 'react-hot-toast';
 
 const AddProduct = () => {
   const navigate = useNavigate();
@@ -56,7 +57,7 @@ const AddProduct = () => {
     if (image) {
         data.append('image', image);
     } else {
-        alert("Please select a product image");
+        toast.error("Please select a product image");
         setLoading(false);
         return;
     }
@@ -68,13 +69,12 @@ const AddProduct = () => {
       });
       
       if (response.data.success) {
-        alert("Product Added Successfully!");
+        toast.success("Product Added Successfully!");
         navigate(-1); 
       }
     } catch (error) {
       const errorMsg = error.response?.data?.message || "Error adding product";
-      console.error("Upload Error:", errorMsg);
-      alert(errorMsg);
+      toast.error(errorMsg);
     } finally {
       setLoading(false);
     }

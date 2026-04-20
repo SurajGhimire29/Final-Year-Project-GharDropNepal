@@ -6,6 +6,7 @@ import Navbar from "./components/Nav";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import Loading from "./components/Loading";
+import { Toaster } from "react-hot-toast";
 
 // Standard Dashboard Components
 import VendorHome from "./pages/Vendor/VendorHome";
@@ -27,13 +28,9 @@ import VendorOrders from "./pages/Vendor/VendorOrder";
 import OrderDetails from "./pages/Vendor/OrderDetails";
 
 // --- Lazy Loading Utility ---
-const lazyWithDelay = (importFunc, delay = 2000) => {
-  return lazy(() =>
-    Promise.all([
-      importFunc(),
-      new Promise((resolve) => setTimeout(resolve, delay)),
-    ]).then(([module]) => module)
-  );
+// Removed artificial delay to ensure the app loads instantly
+const lazyWithDelay = (importFunc) => {
+  return lazy(importFunc);
 };
 
 // --- Lazy Loaded Pages ---
@@ -48,7 +45,9 @@ const TrackingPage = lazyWithDelay(() => import("./pages/Customer/TrackingPage")
 const Cart = lazyWithDelay(() => import("./pages/Customer/Cart"));
 const Checkout = lazyWithDelay(() => import("./pages/Customer/Checkout"));
 const History = lazyWithDelay(() => import("./pages/Customer/History"));
-
+const UserManual = lazyWithDelay(() => import("./pages/Customer/UserManual"));
+const ContactUs = lazyWithDelay(() => import("./pages/Customer/ContactUs"));
+const Notifications = lazyWithDelay(() => import("./pages/Customer/Notifications"));
 // Admin/Reports & Finance
 const AdminReports = lazyWithDelay(() => import("./pages/Admin/AdminReports"));
 const PayVendor = lazyWithDelay(() => import("./pages/Admin/PayVendor")); 
@@ -56,6 +55,7 @@ const PayDelivery = lazyWithDelay(() => import("./pages/Admin/PayDelivery"));
 
 // Customer Tracking
 const LiveTracking = lazyWithDelay(() => import("./pages/Customer/LiveTracking"));
+const OrderSuccess = lazyWithDelay(() => import("./pages/Customer/OrderSuccess"));
 
 // Payment Pages
 const Payment = lazyWithDelay(() => import("./pages/Payment/Payment"));
@@ -63,6 +63,7 @@ const PaymentStatus = lazyWithDelay(() => import("./pages/Payment/PaymentStatus"
 
 // Admin/Vendor Specialized Pages
 const ManageBanner = lazyWithDelay(() => import("./pages/Admin/ManageBanner"));
+const ManageMessages = lazyWithDelay(() => import("./pages/Admin/ManageMessages"));
 const VendorBannerRequest = lazyWithDelay(() => import("./pages/Vendor/VendorBannerRequest"));
 const VendorEarnings = lazyWithDelay(() => import("./pages/Vendor/VendorEarnings"));
 
@@ -117,7 +118,7 @@ function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setInitialLoading(false);
-    }, 3000);
+    }, 800);
     return () => clearTimeout(timer);
   }, []);
 
@@ -127,6 +128,34 @@ function App() {
 
   return (
     <BrowserRouter>
+      <Toaster 
+        position="top-center" 
+        reverseOrder={false} 
+        toastOptions={{
+          style: {
+            background: '#1b4332',
+            color: '#fff',
+            borderRadius: '2rem',
+            padding: '16px 24px',
+            border: '2px solid #40916c',
+            fontWeight: 'bold',
+            fontSize: '14px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5)',
+          },
+          success: {
+            iconTheme: {
+              primary: '#ffb703',
+              secondary: '#1b4332',
+            },
+          },
+          error: {
+            style: {
+              background: '#450a0a',
+              border: '2px solid #991b1b',
+            }
+          }
+        }}
+      />
       <Suspense fallback={<Loading />}>
         <Routes>
           {/* --- Auth Routes --- */}
@@ -135,13 +164,16 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPassword />} /> 
           <Route path="/login" element={<Navigate to="/signin" replace />} />
 
+          {/* --- Standalone Customer Routes (NO Nav/Footer) --- */}
+          <Route path="/product/:id" element={<SingleProductPage />} />
+          <Route path="/payment" element={<Payment />} />
+
           {/* --- Customer & General Routes (With Nav/Footer) --- */}
           <Route element={<MainLayout />}>
             <Route path="/" element={<HomePage user={user} />} />
             <Route path="/home" element={<HomePage user={user} />} />
             <Route path="/about" element={<AboutUs />} />
             <Route path="/products" element={<ProductsPage />} />
-            <Route path="/product/:id" element={<SingleProductPage />} />
             <Route path="/vendor/:id" element={<VendorProfile />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/track-order" element={<TrackingPage />} />
@@ -149,8 +181,11 @@ function App() {
             <Route path="/live-location" element={<LiveTracking />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/payment" element={<Payment />} />
             <Route path="/payment-status" element={<PaymentStatus />} />
+            <Route path="/order-success" element={<OrderSuccess />} />
+            <Route path="/manual" element={<UserManual />} />
+            <Route path="/contact" element={<ContactUs />} />
+            <Route path="/notifications" element={<Notifications />} />
           </Route>
 
           {/* --- Vendor Dashboard Routes --- */}
@@ -175,6 +210,7 @@ function App() {
           <Route path="/admin/reports" element={<AdminRoute user={user}><AdminReports /></AdminRoute>} />
           <Route path="/admin/pay-vendor" element={<AdminRoute user={user}><PayVendor /></AdminRoute>} />
           <Route path="/admin/pay-delivery" element={<AdminRoute user={user}><PayDelivery /></AdminRoute>} />
+          <Route path="/admin/messages" element={<AdminRoute user={user}><ManageMessages /></AdminRoute>} />
 
           {/* --- Delivery Boy Protected Routes --- */}
           <Route path="/delivery-dashboard" element={<DeliveryRoute user={user}><DeliveryBoyDB /></DeliveryRoute>} />

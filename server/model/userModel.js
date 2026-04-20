@@ -94,6 +94,14 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    addressLine: {
+      type: String,
+      default: "",
+    },
+    city: {
+      type: String,
+      default: "Pokhara",
+    },
   },
   {
     timestamps: true,

@@ -125,7 +125,6 @@ const LiveTracking = () => {
     });
 
     socket.on('riderLocationUpdated', (location) => {
-      console.log("LIVE LOCATION:", location); // DEBUG
 
       if (location?.lat && location?.lng) {
         setRiderLiveLocation([+location.lat, +location.lng]);

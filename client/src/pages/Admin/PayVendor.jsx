@@ -112,6 +112,7 @@ const PayVendor = () => {
                 <th className="px-10 py-6 text-[10px] font-black text-[#40916c] uppercase tracking-[0.2em]">Merchant Info</th>
                 <th className="px-10 py-6 text-[10px] font-black text-[#40916c] uppercase tracking-[0.2em]">Request Date</th>
                 <th className="px-10 py-6 text-[10px] font-black text-[#40916c] uppercase tracking-[0.2em]">Net Payout</th>
+                <th className="px-10 py-6 text-[10px] font-black text-[#40916c] uppercase tracking-[0.2em]">Transaction Type</th>
                 <th className="px-10 py-6 text-[10px] font-black text-[#40916c] uppercase tracking-[0.2em]">Status</th>
                 <th className="px-10 py-6 text-[10px] font-black text-[#40916c] uppercase tracking-[0.2em] text-right">Verification</th>
               </tr>
@@ -144,6 +145,13 @@ const PayVendor = () => {
                       <p className="text-2xl font-black text-[#1b4332] tracking-tighter">
                         Rs. {req.amount.toLocaleString()}
                       </p>
+                    </td>
+                    <td className="px-10 py-8">
+                      <span className={`text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-lg ${
+                        req.type === 'Banner Fee' ? 'bg-purple-100 text-purple-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {req.type || 'Payout'}
+                      </span>
                     </td>
                     <td className="px-10 py-8">
                       <span className={`inline-flex items-center gap-2 px-5 py-2 rounded-full text-[10px] font-black uppercase tracking-widest shadow-sm ${

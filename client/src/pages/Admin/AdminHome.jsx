@@ -27,7 +27,8 @@ import {
   CheckSquare,
   Bike,
   Banknote,
-  HandCoins, // New icon for Pay Delivery
+  HandCoins,
+  MessageSquare,
 } from "lucide-react";
 
 const AdminHome = () => {
@@ -47,7 +48,10 @@ const AdminHome = () => {
     vendorPayout: 0,
     deliveryOwed: 0,
     adminProfit: 0,
+    bannerRevenue: 0,
+    bannerReceivable: 0,
   });
+  const [pendingBanners, setPendingBanners] = useState(0);
 
   useEffect(() => {
     const fetchAdminDashboard = async () => {
@@ -74,6 +78,16 @@ const AdminHome = () => {
       }
     };
     fetchAdminDashboard();
+
+    // Polling for pending banners
+    const interval = setInterval(async () => {
+      try {
+        const res = await axios.get("http://localhost:3000/admin/banners/pending-count", { withCredentials: true });
+        if (res.data.success) setPendingBanners(res.data.count);
+      } catch (err) {}
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, [navigate]);
 
   useLayoutEffect(() => {
@@ -91,7 +105,7 @@ const AdminHome = () => {
       await axios.get("http://localhost:3000/signout", { withCredentials: true });
       localStorage.clear();
       navigate("/signin");
-    } catch (error) { console.log(error); }
+    } catch (error) { }
   };
 
   const statCards = [
@@ -155,8 +169,12 @@ const AdminHome = () => {
                 <Store size={20} /> Manage Vendor
             </button>
             
-            <button onClick={() => navigate("/admin/manage-delivery")} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold hover:bg-[#2d6a4f] transition-all">
+            <button onClick={() => navigate("/admin/delivery")} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold hover:bg-[#2d6a4f] transition-all">
                 <Truck size={20} /> Manage Delivery
+            </button>
+            
+            <button onClick={() => navigate("/admin/messages")} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl font-bold hover:bg-[#2d6a4f] transition-all text-[#ffb703]">
+                <MessageSquare size={20} /> Suggestions
             </button>
           </div>
         </nav>
@@ -201,8 +219,19 @@ const AdminHome = () => {
             </div>
 
             <div className="bg-[#ffb703]/10 p-6 rounded-3xl border border-[#ffb703]/20">
-              <p className="text-[10px] font-black text-[#1b4332] uppercase mb-1">Total Admin Profit</p>
-              <p className="text-xl font-black text-[#1b4332]">Rs. {Number(stats.adminProfit || 0).toLocaleString()}</p>
+              <p className="text-[10px] font-black text-[#1b4332] uppercase mb-1">Banner Income</p>
+              <p className="text-xl font-black text-[#1b4332]">Rs. {Number(stats.bannerRevenue || 0).toLocaleString()}</p>
+              {stats.bannerReceivable > 0 && (
+                <p className="text-[9px] font-bold text-orange-600 mt-1 uppercase italic">
+                  + Rs. {Number(stats.bannerReceivable).toLocaleString()} Pending
+                </p>
+              )}
+            </div>
+
+            <div className="bg-[#40916c] p-6 rounded-3xl text-white shadow-xl relative overflow-hidden">
+              <p className="text-[10px] font-black uppercase opacity-60 mb-1">Total Admin Profit</p>
+              <p className="text-xl font-black italic">Rs. {Number(stats.adminProfit || 0).toLocaleString()}</p>
+              <TrendingUp className="absolute -right-4 -bottom-4 size-20 opacity-10" />
             </div>
           </div>
         </div>
@@ -226,7 +255,7 @@ const AdminHome = () => {
             <div ref={containerRef} className="w-full h-[400px] relative mt-4">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={chartData}>
-                   <defs>
+                    <defs>
                       <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#40916c" stopOpacity={0.3}/>
                         <stop offset="95%" stopColor="#40916c" stopOpacity={0}/>
@@ -247,8 +276,14 @@ const AdminHome = () => {
               <h3 className="text-xl font-black uppercase mb-6 tracking-tight">Quick Actions</h3>
               <div className="space-y-4">
                 <button onClick={() => navigate("/admin/confirm-orders")} className="w-full flex items-center justify-between p-4 bg-[#ffb703] text-[#1b4332] rounded-2xl font-black text-sm">Confirm Orders <CheckSquare size={16} /></button>
-                <button onClick={() => navigate("/admin/manage-banners")} className="w-full flex items-center justify-between p-4 bg-white/10 rounded-2xl font-bold text-sm">Banners <ImageIcon size={16} /></button>
-                <button onClick={() => navigate("/admin/manage-delivery")} className="w-full flex items-center justify-between p-4 bg-white/10 rounded-2xl font-bold text-sm">Riders <Bike size={16} /></button>
+                <button onClick={() => navigate("/admin/manage-banners")} className="w-full flex items-center justify-between p-4 bg-white/10 rounded-2xl font-bold text-sm relative">
+                  <span>Banners</span> 
+                  <div className="flex items-center gap-2">
+                    {pendingBanners > 0 && <span className="bg-red-500 text-white text-[10px] px-2 py-0.5 rounded-full animate-pulse">{pendingBanners}</span>}
+                    <ImageIcon size={16} />
+                  </div>
+                </button>
+                <button onClick={() => navigate("/admin/delivery")} className="w-full flex items-center justify-between p-4 bg-white/10 rounded-2xl font-bold text-sm">Riders <Bike size={16} /></button>
               </div>
             </div>
           </div>

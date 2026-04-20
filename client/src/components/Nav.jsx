@@ -1,19 +1,22 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Package, ShoppingCart, LogIn, UserCircle, LogOut } from 'lucide-react';
-import axios from 'axios'; // Import axios for the cart count
+import { Home, Package, ShoppingCart, LogIn, LogOut, BookOpen, MessageSquare } from 'lucide-react';
+import axios from 'axios'; 
 import logo from "../assets/image.png";
 
+// --- Global Navigation Bar ---
+// This component automatically tracks the user's login state and live cart count.
 const Navbar = () => {
+  // Read initial user data from localStorage
   const [userRole, setUserRole] = useState(localStorage.getItem("userRole"));
   const [userName, setUserName] = useState(localStorage.getItem("userName"));
   const [userAvatar, setUserAvatar] = useState(localStorage.getItem("userAvatar"));
-  const [cartCount, setCartCount] = useState(0); // State for the badge
+  const [cartCount, setCartCount] = useState(0); 
   
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Function to fetch cart count from backend
+  // Function to securely fetch the current cart count from the database
   const fetchCartCount = async () => {
     if (!localStorage.getItem("userRole")) {
       setCartCount(0);

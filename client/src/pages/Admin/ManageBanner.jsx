@@ -1,11 +1,14 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; // Added for back navigation
 import { 
   Trash2, Plus, Image as ImageIcon, Loader2, 
-  UploadCloud, Check, X, Clock, Store 
+  UploadCloud, Check, X, Clock, ArrowLeft 
 } from "lucide-react";
+import { toast } from "react-hot-toast";
 
 const ManageBanner = () => {
+  const navigate = useNavigate(); // Hook for navigation
   const [banners, setBanners] = useState([]);
   const [requests, setRequests] = useState([]); // State for vendor requests
   const [activeTab, setActiveTab] = useState("live"); // "live" or "requests"
@@ -45,11 +48,11 @@ const ManageBanner = () => {
         { withCredentials: true }
       );
       if (data.success) {
-        alert(`Banner ${status === 'approved' ? 'Approved' : 'Rejected'}`);
+        toast.success(`Banner ${status === 'approved' ? 'Approved' : 'Rejected'}`);
         fetchData(); // Refresh both lists
       }
     } catch (err) {
-      alert("Failed to update request status");
+      toast.error("Failed to update request status");
     }
   };
 
@@ -61,7 +64,7 @@ const ManageBanner = () => {
 
   const handleAddBanner = async (e) => {
     e.preventDefault();
-    if (!imageFile) return alert("Please select an image");
+    if (!imageFile) return toast.error("Please select an image");
     setUploading(true);
     
     const formData = new FormData();
@@ -81,10 +84,10 @@ const ManageBanner = () => {
         setBanners([data.banner, ...banners]);
         setNewBanner({ badge: "", title: "", desc: "" });
         setImageFile(null); setPreview(null);
-        alert("Banner published!");
+        toast.success("Banner published!");
       }
     } catch (err) {
-      alert(err.response?.data?.message || "Failed to add banner");
+      toast.error(err.response?.data?.message || "Failed to add banner");
     } finally {
       setUploading(false);
     }
@@ -95,14 +98,24 @@ const ManageBanner = () => {
     try {
       await axios.delete(`http://localhost:3000/admin/banners/${id}`, { withCredentials: true });
       setBanners(banners.filter(b => b._id !== id));
+      toast.success("Banner deleted successfully");
     } catch (err) {
-      alert("Error deleting");
+      toast.error("Error deleting banner");
     }
   };
 
   return (
     <div className="p-8 bg-[#f0f9f4] min-h-screen">
       <div className="max-w-6xl mx-auto">
+        
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)} 
+          className="mb-6 flex items-center gap-2 text-[#40916c] font-black uppercase text-xs hover:text-[#1b4332] transition-colors"
+        >
+          <ArrowLeft size={16} /> Back to Dashboard
+        </button>
+
         <div className="flex justify-between items-end mb-8">
           <div>
             <h2 className="text-3xl font-black text-[#1b4332] uppercase tracking-tighter">
@@ -129,7 +142,7 @@ const ManageBanner = () => {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-          {/* Form Section (Only shows when on Live tab or always available) */}
+          {/* Form Section */}
           <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-[#d8f3dc] h-fit sticky top-8">
             <h3 className="font-black text-[#1b4332] uppercase mb-6 flex items-center gap-2">
               <Plus size={20} className="text-[#ffb703]" /> Create Admin Slide
@@ -198,6 +211,13 @@ const ManageBanner = () => {
                           </div>
                           <h4 className="font-black text-[#1b4332]">{req.title}</h4>
                           <p className="text-xs font-bold text-[#40916c]">Vendor: {req.vendorName || "Unknown Vendor"}</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
+                              req.paymentStatus === 'Completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                            }`}>
+                              {req.paymentStatus === 'Completed' ? 'Paid' : 'Unpaid (Pending Charge)'}
+                            </span>
+                          </div>
                         </div>
                       </div>
                       <div className="flex gap-2">
